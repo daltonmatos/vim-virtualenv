@@ -13,19 +13,14 @@ function! virtualenv#activate(...)
     let name   = a:0 > 0 ? a:1 : ''
     let silent = a:0 > 1 ? a:2 : 0
     let env_dir = ''
-    if len(name) == 0  "Figure out the name based on current file
-        if isdirectory($VIRTUAL_ENV)
-            let name = fnamemodify($VIRTUAL_ENV, ':t')
-            let env_dir = $VIRTUAL_ENV
-        elseif isdirectory($PROJECT_HOME)
-            let fn = expand('%:p')
-            let pat = '^'.$PROJECT_HOME.'/'
-            if fn =~ pat
-                let name = fnamemodify(substitute(fn, pat, '', ''), ':h')
-                if name != '.'  "No project directory
-                    let env_dir = g:virtualenv_directory.'/'.name
-                endif
-            endif
+    if len(name) == 0
+        let pipenv = trim(matchstr(system('which pipenv > /dev/null && pipenv --venv'), '^/.\+'))
+        if len(pipenv)
+            echoerr pipenv
+            let env_dir = pipenv
+            let env_name = fnamemodify(env_dir, ":t")
+
+            let name = env_name
         endif
     else
         let env_dir = g:virtualenv_directory.'/'.name
