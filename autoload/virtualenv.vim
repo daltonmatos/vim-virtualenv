@@ -10,22 +10,26 @@ if has('python')
 endif
 
 function! virtualenv#activate(...)
+
+    if exists('b:venv_loaded') && b:venv_loaded == g:virtualenv_name
+        if exists("*airline#extensions#virtualenv#update")
+               call airline#extensions#virtualenv#update()
+        endif
+        return
+    endif
+    call virtualenv#deactivate()
     let name   = a:0 > 0 ? a:1 : ''
     let silent = a:0 > 1 ? a:2 : 0
     let env_dir = ''
-    if len(name) == 0  "Figure out the name based on current file
-        if isdirectory($VIRTUAL_ENV)
-            let name = fnamemodify($VIRTUAL_ENV, ':t')
-            let env_dir = $VIRTUAL_ENV
-        elseif isdirectory($PROJECT_HOME)
-            let fn = expand('%:p')
-            let pat = '^'.$PROJECT_HOME.'/'
-            if fn =~ pat
-                let name = fnamemodify(substitute(fn, pat, '', ''), ':h')
-                if name != '.'  "No project directory
-                    let env_dir = g:virtualenv_directory.'/'.name
-                endif
-            endif
+    if len(name) == 0
+        let pipenv = trim(matchstr(system('which pipenv > /dev/null && pipenv --venv'), '^/.\+'))
+        if len(pipenv)
+            let env_dir = pipenv
+            let full_env_name = fnamemodify(env_dir, ":t")
+            let last_hifen = strridx(full_env_name, '-')
+            let env_name = full_env_name[0:last_hifen - 1]
+
+            let name = env_name
         endif
     else
         let env_dir = g:virtualenv_directory.'/'.name
@@ -40,7 +44,6 @@ function! virtualenv#activate(...)
     endif
 
     let bin = env_dir.(has('win32')? '/Scripts': '/bin')
-    call virtualenv#deactivate()
 
     let s:prev_path = $PATH
 
@@ -57,6 +60,8 @@ function! virtualenv#activate(...)
     if exists("*airline#extensions#virtualenv#update")
            call airline#extensions#virtualenv#update()
     endif
+
+    let b:venv_loaded = g:virtualenv_name
 endfunction
 
 function! virtualenv#deactivate()
