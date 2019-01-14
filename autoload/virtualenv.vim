@@ -11,7 +11,7 @@ endif
 
 function! virtualenv#activate(...)
 
-    if exists('b:venv_loaded') && b:venv_loaded == g:virtualenv_name
+    if exists('b:venv_loaded') && b:venv_loaded == get(g:, 'virtualenv_name', '')
         if exists("*airline#extensions#virtualenv#update")
                call airline#extensions#virtualenv#update()
         endif
